@@ -1,1 +1,0 @@
-# M5-D2-Strive-Blog
