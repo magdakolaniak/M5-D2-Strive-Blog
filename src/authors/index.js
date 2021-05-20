@@ -1,81 +1,55 @@
 import express from 'express';
-import fs from 'fs';
-import path, { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import uniqid from 'uniqid';
+import multer from 'multer';
+import { getAuthors, writeAuthors } from '../lib/fs-helper.js';
+import { writeAvatarPicture } from '../lib/fs-helper.js';
 
-const router = express.Router();
-const _filename = fileURLToPath(import.meta.url);
-const _dirname = dirname(_filename);
+const authorsRouter = express.Router();
 
-const authorsFilePath = path.join(_dirname, 'authors.json');
-
-router.get('/', (req, res) => {
-  const fileAsBuffer = fs.readFileSync(authorsFilePath);
-  const fileAsString = fileAsBuffer.toString();
-  const fileAsJSON = JSON.parse(fileAsString);
-  res.send(fileAsJSON);
-});
-router.get('/:id', (req, res) => {
-  const fileAsBuffer = fs.readFileSync(authorsFilePath);
-  const fileAsString = fileAsBuffer.toString();
-  const fileAsJSON = JSON.parse(fileAsString);
-  const author = fileAsJSON.find((author) => author.id === req.params.id);
-  if (!author) {
-    res
-      .status(404)
-      .send({ message: `Author with ID ${req.params.id} is not there` });
+authorsRouter.get('/', async (req, res, next) => {
+  try {
+    const authors = await getAuthors();
+    res.send(authors);
+  } catch (error) {
+    next();
   }
-  res.send(author);
-});
-router.post('/', (req, res) => {
-  const { name, surname, email, dateOfBirth } = req.body;
-  const author = {
-    id: uniqid(),
-    name,
-    surname,
-    email,
-    dateOfBirth,
-    avatar: `https://ui-avatars.com/api/?name=${surname}`,
-    createdAt: new Date(),
-  };
-
-  const fileAsBuffer = fs.readFileSync(authorsFilePath);
-  const fileAsString = fileAsBuffer.toString();
-  const fileAsArray = JSON.parse(fileAsString);
-  fileAsArray.push(author);
-  fs.writeFileSync(authorsFilePath, JSON.stringify(fileAsArray));
-  res.send(author);
-});
-router.delete('/:id', (req, res) => {
-  const fileAsBuffer = fs.readFileSync(authorsFilePath);
-  const fileAsString = fileAsBuffer.toString();
-  const fileAsJSON = JSON.parse(fileAsString);
-
-  const remainingAuthors = fileAsJSON.filter(
-    (author) => author.id !== req.params.id
-  );
-
-  fs.writeFileSync(authorsFilePath, JSON.stringify(remainingAuthors));
-  res.status(204).send();
-});
-router.put('/:id', (req, res) => {
-  const fileAsBuffer = fs.readFileSync(authorsFilePath);
-  const fileAsString = fileAsBuffer.toString();
-  const fileAsJSON = JSON.parse(fileAsString);
-
-  const remainingAuthors = fileAsJSON.filter(
-    (author) => author.id !== req.params.id
-  );
-  const updatedAuthor = {
-    id: req.params.id,
-
-    ...req.body,
-  };
-  remainingAuthors.push(updatedAuthor);
-  fs.writeFileSync(authorsFilePath, JSON.stringify(remainingAuthors));
-
-  res.send(updatedAuthor);
 });
 
-export default router;
+authorsRouter.get('/:id', async (req, res, next) => {
+  try {
+    const authors = await getAuthors();
+
+    const author = authors.find((author) => author.id === req.params.id);
+    res.send(author);
+  } catch (error) {
+    next(error);
+  }
+});
+authorsRouter.post('/', async (req, res, next) => {
+  try {
+    const newAuthor = { id: uniqid(), ...req.body, createdAt: newDate() };
+    const authors = await getAuthors();
+
+    authors.push(newAuthor);
+    await writeAuthors(authors);
+    res.status(201).send({ id: newAuthor.id });
+  } catch (error) {
+    next(error);
+  }
+});
+authorsRouter.post(
+  '/:id/uploadAvatar',
+  multer().single('avatarPicture'),
+  async (req, res, next) => {
+    try {
+      await writeAvatarPicture(req.file.originalname, req.file.buffer);
+      res.send();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+authorsRouter.delete('/:id', (req, res) => {});
+authorsRouter.put('/:id', (req, res) => {});
+
+export default authorsRouter;

@@ -9,16 +9,24 @@ import {
   notFoundErrorHandler,
   catchAllErrorHandler,
 } from './errorsHandler.js';
+import { getCurrentFolderPath } from './lib/fs-helper.js';
+import { join } from 'path';
 
 const server = express();
 const port = 3001;
 
+const publicFolderPath = join(
+  getCurrentFolderPath(import.meta.url),
+  '../public'
+);
+console.log(publicFolderPath);
 // middlewares part //
+server.use(express.static(publicFolderPath));
 server.use(cors());
 server.use(express.json());
 
 server.use('/authors', authorsRouter);
-server.use('/posts', postsRouter);
+server.use('/blogPosts', postsRouter);
 
 server.use(badRequestErrorHandler);
 server.use(notFoundErrorHandler);
