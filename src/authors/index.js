@@ -1,5 +1,7 @@
 import express from 'express';
 import uniqid from 'uniqid';
+
+import { extname } from 'path';
 import multer from 'multer';
 import { getAuthors, writeAuthors } from '../lib/fs-helper.js';
 import { writeAvatarPicture } from '../lib/fs-helper.js';
@@ -42,9 +44,24 @@ authorsRouter.post(
   multer().single('avatarPicture'),
   async (req, res, next) => {
     try {
-      await writeAvatarPicture(req.file.originalname, req.file.buffer);
-      res.send();
+      await writeAvatarPicture(
+        req.file.originalname,
+
+        req.file.buffer
+      );
+      const authors = await getAuthors();
+      const author = authors.find((author) => author.id === req.params.id);
+      author.avatar = `http://localhost:3001/img/authors/${req.file.originalname}`;
+      const remainingAuthors = authors.filter(
+        (author) => author.id !== req.params.id
+      );
+
+      remainingAuthors.push(author);
+
+      await writeAuthors(remainingAuthors);
+      res.send(author);
     } catch (error) {
+      console.log(error);
       next(error);
     }
   }

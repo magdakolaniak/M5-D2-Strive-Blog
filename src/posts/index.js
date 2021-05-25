@@ -7,6 +7,8 @@ import { validationResult } from 'express-validator';
 import createError from 'http-errors';
 
 import { postValidation } from './validation.js';
+import { writeCoverPicture } from '../lib/fs-helper.js';
+import multer from 'multer';
 
 const postsRouter = express.Router();
 
@@ -46,6 +48,29 @@ postsRouter.post('/', postValidation, async (req, res, next) => {
     next(error);
   }
 });
+
+postsRouter.post(
+  '/:id/uploadCover',
+  multer().single('coverPicture'),
+  async (req, res, next) => {
+    try {
+      await writeCoverPicture(
+        req.file.originalname,
+
+        req.file.buffer
+      );
+      const posts = await getPosts();
+      const post = posts.find((post) => post._id === req.params.id);
+      post.cover = `http://localhost:3001/img/blogPosts/${req.file.originalname}`;
+      const remainingPosts = posts.filter((post) => post._id !== req.params.id);
+      remainingPosts.push(post);
+      await writePosts(remainingPosts);
+      res.send(post);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 postsRouter.put('/:id', async (req, res, next) => {
   try {
