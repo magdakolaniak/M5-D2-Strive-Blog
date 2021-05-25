@@ -13,7 +13,7 @@ import { getCurrentFolderPath } from './lib/fs-helper.js';
 import { join } from 'path';
 
 const server = express();
-const port = 3001;
+const port = process.env.PORT;
 
 const publicFolderPath = join(
   getCurrentFolderPath(import.meta.url),
