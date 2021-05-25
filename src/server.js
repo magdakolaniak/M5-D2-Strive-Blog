@@ -9,20 +9,25 @@ import {
   notFoundErrorHandler,
   catchAllErrorHandler,
 } from './errorsHandler.js';
-import { getCurrentFolderPath } from './lib/fs-helper.js';
-import { join } from 'path';
 
 const server = express();
 const port = process.env.PORT;
 
-const publicFolderPath = join(
-  getCurrentFolderPath(import.meta.url),
-  '../public'
-);
-console.log(publicFolderPath);
+const whitelist = ['http://localhost:3000'];
 // middlewares part //
-server.use(express.static(publicFolderPath));
-server.use(cors());
+const corsOptions = {
+  origin: function (origin, next) {
+    console.log('ORIGIN ', origin);
+    if (whitelist.indexOf(origin) !== -1) {
+      // origin allowed
+      next(null, true);
+    } else {
+      // origin not allowed
+      next(new Error('CORS TROUBLES!!!!!'));
+    }
+  },
+};
+server.use(cors(corsOptions));
 server.use(express.json());
 
 server.use('/authors', authorsRouter);
