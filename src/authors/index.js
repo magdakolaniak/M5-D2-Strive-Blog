@@ -4,9 +4,17 @@ import uniqid from 'uniqid';
 import { extname } from 'path';
 import multer from 'multer';
 import { getAuthors, writeAuthors } from '../lib/fs-helper.js';
-import { writeAvatarPicture } from '../lib/fs-helper.js';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 const authorsRouter = express.Router();
+
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'Strive-Blog/Avatars',
+  },
+});
 
 authorsRouter.get('/', async (req, res, next) => {
   try {
@@ -41,17 +49,12 @@ authorsRouter.post('/', async (req, res, next) => {
 });
 authorsRouter.post(
   '/:id/uploadAvatar',
-  multer().single('avatarPicture'),
+  multer({ storage: cloudinaryStorage }).single('avatarPicture'),
   async (req, res, next) => {
     try {
-      await writeAvatarPicture(
-        req.file.originalname,
-
-        req.file.buffer
-      );
       const authors = await getAuthors();
       const author = authors.find((author) => author.id === req.params.id);
-      author.avatar = `http://localhost:3001/img/authors/${req.file.originalname}`;
+      author.avatar = `${req.file.path}`;
       const remainingAuthors = authors.filter(
         (author) => author.id !== req.params.id
       );

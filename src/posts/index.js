@@ -17,7 +17,7 @@ const postsRouter = express.Router();
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'Strive-Blog',
+    folder: 'Strive-Blog/Covers',
   },
 });
 
