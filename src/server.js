@@ -11,13 +11,14 @@ import {
 } from './errorsHandler.js';
 
 const server = express();
-const port = process.env.PORT;
+const { PORT } = process.env;
 
-const whitelist = ['http://localhost:3000'];
+const whitelist = [process.env.FRONTEND_DEV_URL];
+console.log(whitelist);
 // middlewares part //
 const corsOptions = {
   origin: function (origin, next) {
-    console.log('ORIGIN ', origin);
+    console.log('ORIGIN: ', origin);
     if (whitelist.indexOf(origin) !== -1) {
       // origin allowed
       next(null, true);
@@ -38,7 +39,7 @@ server.use(notFoundErrorHandler);
 server.use(catchAllErrorHandler);
 
 console.table(listEndpoints(server));
-server.listen(port, () => {
-  console.log('Server listening on port ', port);
+server.listen(PORT, () => {
+  console.log('Server listening on port ', PORT);
 });
 server.on('error', (error) => console.log(`Server is not running: ${error} `));
